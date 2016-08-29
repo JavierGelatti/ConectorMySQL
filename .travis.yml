@@ -7,6 +7,6 @@ services:
   - mysql
 
 before_script:
-  - mysql -e "CREATE DATABASE prueba;"
-  - mysql -e "CREATE USER 'prueba'@'localhost' IDENTIFIED BY 'prueba';"
-  - mysql -e "GRANT ALL PRIVILEGES ON prueba.* TO 'prueba'@'localhost';"
+  - mysql -u root -e "CREATE DATABASE prueba;"
+  - mysql -u root -e "CREATE USER 'prueba'@'localhost' IDENTIFIED BY 'prueba';"
+  - mysql -u root -e "GRANT ALL PRIVILEGES ON prueba.* TO 'prueba'@'localhost';"
