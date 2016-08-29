@@ -1,9 +1,9 @@
 package com.javiergelatti.persistencia.mysql;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -33,7 +33,7 @@ public class TestConectorMySQL {
         try {
             bd.conectar();
         } catch (ErrorBD e) {
-        	e.printStackTrace();
+            e.printStackTrace();
         }
 
         Assume.assumeTrue(bd.estáConectada());
@@ -65,28 +65,28 @@ public class TestConectorMySQL {
 
     @Test
     public void luegoDeConectarse_EstáConectada() throws Exception {
-    	bd = new BaseDeDatosMySQL(url, usr, pwd);
-    	
-    	bd.conectar();
-    	
+        bd = new BaseDeDatosMySQL(url, usr, pwd);
+        
+        bd.conectar();
+        
         assertTrue(bd.estáConectada());
     }
 
     @Test
     public void sePuedeEjecutarSQL() throws Exception {
         bd.ejecutar("CREATE TABLE IF NOT EXISTS `Prueba`"
-		    + "(`id` int(11) NOT NULL AUTO_INCREMENT,"
-		    + "PRIMARY KEY (`id`)) AUTO_INCREMENT=1");
+            + "(`id` int(11) NOT NULL AUTO_INCREMENT,"
+            + "PRIMARY KEY (`id`)) AUTO_INCREMENT=1");
         bd.ejecutar("DROP TABLE Prueba");
     }
     
     @Test
     public void siEstaDesconectada_SeConectaCuandoSeEjecutaSQL() throws Exception {
-    	bd.desconectar();
-    	
-    	bd.ejecutar("SHOW TABLES");
-    	
-    	assertTrue(bd.estáConectada());
+        bd.desconectar();
+        
+        bd.ejecutar("SHOW TABLES");
+        
+        assertTrue(bd.estáConectada());
     }
 
     @Test
@@ -212,6 +212,14 @@ public class TestConectorMySQL {
         assertEquals(id, bd.getUltimoId());
 
         eliminarTabla();
+    }
+    
+    @Test
+    public void sePuedeObtenerUnPreparedStatement() throws Exception {
+    	fail();
+        PreparedStatement sentencia = bd.prepararSentencia("SELECT * FROM prueba WHERE id = ?");
+        Connection conexion = sentencia.getConnection();
+        assertEquals("afssdf", conexion.getMetaData().getURL());
     }
     
     @Ignore

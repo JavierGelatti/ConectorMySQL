@@ -40,10 +40,10 @@ public class BaseDeDatosMySQL {
         }
     }
 
-	private void iniciarConexion() throws ClassNotFoundException, SQLException {
-		Class.forName("com.mysql.jdbc.Driver");
-		conexion = DriverManager.getConnection(urlBD, usuario, pass);
-	}
+    private void iniciarConexion() throws ClassNotFoundException, SQLException {
+        Class.forName("com.mysql.jdbc.Driver");
+        conexion = DriverManager.getConnection(urlBD, usuario, pass);
+    }
 
     private void limpiarConexion() {
         if (!estáConectada()) return;
@@ -69,17 +69,17 @@ public class BaseDeDatosMySQL {
     }
 
     public PreparedStatement prepararSentenciaConClavesGeneradas(String sql) {
-    	conectar();
+        conectar();
         return prepararStatement(sql, Statement.RETURN_GENERATED_KEYS);
     }
 
-	private PreparedStatement prepararStatement(String sql, int info) {
-		try {
-			return conexion.prepareStatement(sql, info);
+    private PreparedStatement prepararStatement(String sql, int info) {
+        try {
+            return conexion.prepareStatement(sql, info);
         } catch (SQLException e) {
             throw new ErrorBD(e);
         }
-	}
+    }
 
     public void ejecutar(String sql) {
         conectar();
@@ -100,16 +100,16 @@ public class BaseDeDatosMySQL {
         }
     }
 
-	private void capturarId(PreparedStatement stm) throws SQLException {
-		try (ResultSet resultSetId = stm.getGeneratedKeys()) {
-			resultSetId.next();
-			ultimoId = resultSetId.getInt(1);
-		}
-	}
+    private void capturarId(PreparedStatement stm) throws SQLException {
+        try (ResultSet resultSetId = stm.getGeneratedKeys()) {
+            resultSetId.next();
+            ultimoId = resultSetId.getInt(1);
+        }
+    }
 
-	private PreparedStatement prepararStatementConCapturaDeId(String sql) throws SQLException {
-		return conexion.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
-	}
+    private PreparedStatement prepararStatementConCapturaDeId(String sql) throws SQLException {
+        return conexion.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+    }
 
     public ResultSet ejecutarConsulta(String sql) {
         conectar();
