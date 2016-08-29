@@ -33,7 +33,7 @@ public class BaseDeDatosMySQL {
         try {
             iniciarConexion();
         } catch (SQLException e) {
-            limpiarConexion();
+            desconectar();
             throw new ErrorBD(e);
         } catch (ClassNotFoundException e) {
             throw new ErrorBD(e);
@@ -43,16 +43,6 @@ public class BaseDeDatosMySQL {
     private void iniciarConexion() throws ClassNotFoundException, SQLException {
         Class.forName("com.mysql.jdbc.Driver");
         conexion = DriverManager.getConnection(urlBD, usuario, pass);
-    }
-
-    private void limpiarConexion() {
-        if (!estáConectada()) return;
-        
-        try {
-            conexion.close();
-        } catch (SQLException e) {
-            throw new ErrorBD(e);
-        }
     }
     
     public boolean estáConectada() {
@@ -65,20 +55,11 @@ public class BaseDeDatosMySQL {
 
     public PreparedStatement prepararSentencia(String sql) {
         conectar();
-        return prepararStatement(sql, Statement.NO_GENERATED_KEYS);
-    }
-
-    public PreparedStatement prepararSentenciaConClavesGeneradas(String sql) {
-        conectar();
-        return prepararStatement(sql, Statement.RETURN_GENERATED_KEYS);
-    }
-
-    private PreparedStatement prepararStatement(String sql, int info) {
         try {
-            return conexion.prepareStatement(sql, info);
-        } catch (SQLException e) {
-            throw new ErrorBD(e);
-        }
+		    return conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+		} catch (SQLException e) {
+		    throw new ErrorBD(e);
+		}
     }
 
     public void ejecutar(String sql) {

@@ -6,7 +6,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
@@ -26,7 +28,7 @@ public class TestConectorMySQL {
     private final static String sqlCrearTabla = "CREATE TABLE IF NOT EXISTS `Prueba`"
         + "(`id` int(11) NOT NULL AUTO_INCREMENT,"
         + "PRIMARY KEY (`id`)) AUTO_INCREMENT=1";
-    private final static String sqlEliminarTabla = "DROP TABLE Prueba";
+    private final static String sqlEliminarTabla = "DROP TABLE IF EXISTS `Prueba`";
 
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -42,6 +44,11 @@ public class TestConectorMySQL {
     @Before
     public void setUp() throws Exception {
         bd.conectar();
+    }
+    
+    @After
+    public void tearDown() throws Exception {
+        eliminarTabla();
     }
 
     @AfterClass
@@ -101,8 +108,6 @@ public class TestConectorMySQL {
 
         assertTrue(rs.next());
         assertEquals(id, rs.getInt("id"));
-
-        eliminarTabla();
     }
 
     @Test
@@ -119,8 +124,6 @@ public class TestConectorMySQL {
 
         assertTrue(rs.next());
         assertEquals(id, rs.getInt("id"));
-
-        eliminarTabla();
     }
 
     @Test
@@ -136,8 +139,6 @@ public class TestConectorMySQL {
         ResultSet rs = bd.ejecutarConsulta(sqlSelect);
 
         assertFalse(rs.next());
-
-        eliminarTabla();
     }
 
     @Test
@@ -155,8 +156,6 @@ public class TestConectorMySQL {
         ResultSet rs = bd.ejecutarConsulta(sqlSelect);
 
         assertFalse(rs.next());
-
-        eliminarTabla();
     }
     
     @Test
@@ -171,8 +170,6 @@ public class TestConectorMySQL {
         int id = rs.getInt(1);
 
         assertEquals(id, bd.getUltimoId());
-
-        eliminarTabla();
     }
     
     @Test
@@ -190,7 +187,6 @@ public class TestConectorMySQL {
         int id = rs.getInt(1);
 
         assertEquals(id, bd.getUltimoId());
-        eliminarTabla();
     }
 
     @Test
@@ -210,16 +206,49 @@ public class TestConectorMySQL {
         assertEquals(id, bd.getUltimoId());
         assertEquals(id, bd.getUltimoId());
         assertEquals(id, bd.getUltimoId());
-
-        eliminarTabla();
     }
     
     @Test
     public void sePuedeObtenerUnPreparedStatement() throws Exception {
-    	fail();
         PreparedStatement sentencia = bd.prepararSentencia("SELECT * FROM prueba WHERE id = ?");
         Connection conexion = sentencia.getConnection();
-        assertEquals("afssdf", conexion.getMetaData().getURL());
+        
+        assertEquals(url, conexion.getMetaData().getURL());
+    }
+    
+    @Test
+    public void sePuedenObtenerLasClavesGeneradasAPartirDelStatement() throws Exception {
+        crearTabla();
+        String sqlInsert = "INSERT INTO Prueba (id) VALUES (?)";
+        PreparedStatement sentencia = bd.prepararSentencia(sqlInsert);
+        sentencia.setNull(1, Types.INTEGER);
+        
+        sentencia.execute();
+        ResultSet clavesGeneradas = sentencia.getGeneratedKeys();
+        
+        clavesGeneradas.next();
+        assertEquals(1, clavesGeneradas.getInt(1));
+    }
+    
+    @Test
+    public void siNoSeGeneraronClaves_SeRetornaUnResultSetVacio() throws Exception {
+        crearTabla();
+        String sqlInsert = "SELECT * FROM Prueba";
+        PreparedStatement sentencia = bd.prepararSentencia(sqlInsert);
+        
+        sentencia.execute();
+        ResultSet clavesGeneradas = sentencia.getGeneratedKeys();
+        
+        assertFalse(clavesGeneradas.first());
+    }
+    
+    @Test
+    public void elErrorBdGuardaLaCausa() throws Exception {
+        Throwable causa = new Exception();
+        
+        RuntimeException errorBd = new ErrorBD(causa);
+        
+        assertEquals(causa, errorBd.getCause());
     }
     
     @Ignore
@@ -245,15 +274,13 @@ public class TestConectorMySQL {
         r.join(70);
         assertFalse(r.ejecutado);
         bd1.finalizarTransacción();
-
-        eliminarTabla();
     }
 
-    private void eliminarTabla() throws SQLException {
+    private static void eliminarTabla() throws SQLException {
         bd.ejecutar(sqlEliminarTabla);
     }
 
-    private void crearTabla() throws SQLException {
+    private static void crearTabla() throws SQLException {
         bd.ejecutar(sqlCrearTabla);
     }
 
