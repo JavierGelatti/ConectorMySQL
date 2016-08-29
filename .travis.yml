@@ -1,3 +1,12 @@
 language: java
+
 jdk:
   - oraclejdk8
+
+services:
+  - mysql
+
+before_script:
+  - mysql -e 'CREATE DATABASE prueba;'
+  - mysql -e 'CREATE USER ''prueba''@''localhost'' IDENTIFIED BY ''prueba'';'
+  - mysql -e 'GRANT ALL PRIVILEGES ON prueba TO ''prueba''@''localhost'';'
