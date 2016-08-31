@@ -92,11 +92,11 @@ public class BaseDeDatosMySQL {
         return conexion.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
     }
 
-    public ResultSet ejecutarConsulta(String sql) {
+    public ResultadoConsulta ejecutarConsulta(String sql) {
         conectar();
         try {
             PreparedStatement stm = prepararStatementConCapturaDeId(sql);
-            return stm.executeQuery();
+            return new ResultadoConsulta(stm.executeQuery());
         } catch (SQLException e) {
             throw new ErrorBD(e);
         }

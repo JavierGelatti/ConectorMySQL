@@ -1,12 +1,15 @@
 package com.javiergelatti.persistencia.mysql;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -104,10 +107,12 @@ public class TestConectorMySQL {
         String sqlInsert = "INSERT INTO Prueba (id) VALUES (" + id + ")";
         String sqlSelect = "SELECT * FROM Prueba";
         bd.ejecutar(sqlInsert);
-        ResultSet rs = bd.ejecutarConsulta(sqlSelect);
-
-        assertTrue(rs.next());
-        assertEquals(id, rs.getInt("id"));
+        
+		ResultadoConsulta rs = bd.ejecutarConsulta(sqlSelect);
+        assertFalse(rs.estaVacio());
+        rs.forEach(registro -> {
+        	assertEquals(id, registro.getInt("id"));
+        });
     }
 
     @Test
@@ -120,10 +125,12 @@ public class TestConectorMySQL {
         bd.iniciarTransacción();
         bd.ejecutar(sqlInsert);
         bd.finalizarTransacción();
-        ResultSet rs = bd.ejecutarConsulta(sqlSelect);
-
-        assertTrue(rs.next());
-        assertEquals(id, rs.getInt("id"));
+        
+		ResultadoConsulta rs = bd.ejecutarConsulta(sqlSelect);
+        assertFalse(rs.estaVacio());
+        rs.forEach(registro -> {
+        	assertEquals(id, registro.getInt("id"));
+        });
     }
 
     @Test
@@ -136,12 +143,12 @@ public class TestConectorMySQL {
         bd.iniciarTransacción();
         bd.ejecutar(sqlInsert);
         bd.deshacerTransacción();
-        ResultSet rs = bd.ejecutarConsulta(sqlSelect);
-
-        assertFalse(rs.next());
+		ResultadoConsulta rs = bd.ejecutarConsulta(sqlSelect);
+        boolean next = !rs.estaVacio();
+		assertFalse(next);
     }
 
-    @Test
+	@Test
     public void lasTransaccionesPuedenAnidarse() throws Exception {
         crearTabla();
         int id = 5;
@@ -153,9 +160,8 @@ public class TestConectorMySQL {
         bd.ejecutar(sqlInsert);
         bd.finalizarTransacción();
         bd.deshacerTransacción();
-        ResultSet rs = bd.ejecutarConsulta(sqlSelect);
-
-        assertFalse(rs.next());
+		ResultadoConsulta rs = bd.ejecutarConsulta(sqlSelect);
+        assertTrue(rs.estaVacio());
     }
     
     @Test
@@ -165,11 +171,11 @@ public class TestConectorMySQL {
         String sqlSelect = "SELECT id FROM Prueba";
 
         bd.ejecutarYCapturarId(sqlInsert);
-        ResultSet rs = bd.ejecutarConsulta(sqlSelect);
-        rs.next();
-        int id = rs.getInt(1);
-
-        assertEquals(id, bd.getUltimoId());
+        ResultadoConsulta rs = bd.ejecutarConsulta(sqlSelect);
+        rs.forEach(registro -> {
+        	int id = registro.getInt(1);
+        	assertEquals(id, bd.getUltimoId());
+        });
     }
     
     @Test
@@ -182,11 +188,11 @@ public class TestConectorMySQL {
         bd.ejecutarYCapturarId(sqlInsert);
         bd.ejecutarYCapturarId(sqlInsert);
 
-        ResultSet rs = bd.ejecutarConsulta(sqlSelect);
-        rs.next();
-        int id = rs.getInt(1);
-
-        assertEquals(id, bd.getUltimoId());
+        ResultadoConsulta rs = bd.ejecutarConsulta(sqlSelect);
+        rs.forEach(registro -> {
+        	int id = registro.getInt(1);
+        	assertEquals(id, bd.getUltimoId());
+        });
     }
 
     @Test
@@ -251,6 +257,23 @@ public class TestConectorMySQL {
         assertEquals(causa, errorBd.getCause());
     }
     
+    @Test
+	public void testX() throws Exception {
+		crearTabla();
+		String sqlSelect = "SELECT * FROM Prueba";
+		String sqlInsert = "INSERT INTO Prueba (id) VALUES (NULL)";
+		bd.ejecutar(sqlInsert);
+		bd.ejecutar(sqlInsert);
+		bd.ejecutar(sqlInsert);
+		
+		AtomicInteger id = new AtomicInteger(1);
+		ResultadoConsulta resultado = bd.ejecutarConsulta(sqlSelect);
+		resultado.forEach(registro -> {
+			assertEquals(id.intValue(), registro.getInt(1));
+			id.getAndIncrement();
+		});
+	}
+    
     @Ignore
     @Test
     public void lasTablasSeBloqueanCorrectamente() throws Exception {
@@ -269,12 +292,16 @@ public class TestConectorMySQL {
         HiloEspía r = new HiloEspía(bd2, sqlSelect);
 
         bd1.iniciarTransacción();
-        bd1.ejecutarConsulta(sqlSelect);
+        ejecutarConsulta(bd1, sqlSelect);
         r.start();
         r.join(70);
         assertFalse(r.ejecutado);
         bd1.finalizarTransacción();
     }
+
+	private void ejecutarConsulta(BaseDeDatosMySQL bd1, final String sqlSelect) {
+		bd1.ejecutarConsulta(sqlSelect);
+	}
 
     private static void eliminarTabla() throws SQLException {
         bd.ejecutar(sqlEliminarTabla);
